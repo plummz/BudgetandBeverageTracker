@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast'
 import { useBudget } from '../hooks/useBudget'
 import Modal from '../components/Modal'
 import AnimatedNumber from '../components/AnimatedNumber'
+import { InstallButton } from '../components/InstallBanner'
 import { formatDate, formatTime, getWeekDays } from '../utils/formatters'
 import { EXPENSE_CATEGORIES, getRandom, budgetQuotes } from '../utils/quotes'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
@@ -75,14 +76,17 @@ export default function Dashboard({ isDark }) {
               {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => { setNewAllowance(String(allowance)); setShowAllowance(true) }}
-            className="text-right"
-          >
-            <p className={`text-[10px] ${mutedColor} uppercase tracking-wide`}>Daily Budget</p>
-            <p className="neon-text font-black text-xl font-mono">₱{allowance.toLocaleString()}</p>
-          </motion.button>
+          <div className="flex flex-col items-end gap-1.5">
+            <InstallButton />
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => { setNewAllowance(String(allowance)); setShowAllowance(true) }}
+              className="text-right"
+            >
+              <p className={`text-[10px] ${mutedColor} uppercase tracking-wide`}>Daily Budget</p>
+              <p className="neon-text font-black text-xl font-mono">₱{allowance.toLocaleString()}</p>
+            </motion.button>
+          </div>
         </div>
       </div>
 
