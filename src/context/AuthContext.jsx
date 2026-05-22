@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseMisconfigured } from '../lib/supabase'
+
+export { supabaseMisconfigured }
 
 const AuthContext = createContext(null)
 
@@ -18,6 +20,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => {
+    if (supabaseMisconfigured) { setLoading(false); return }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null
       setUser(u)

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
 import { useTheme } from './hooks/useTheme'
-import { useAuth } from './context/AuthContext'
+import { useAuth, supabaseMisconfigured } from './context/AuthContext'
 import BottomNav from './components/BottomNav'
 import InstallBanner from './components/InstallBanner'
 import Dashboard from './pages/Dashboard'
@@ -25,6 +25,24 @@ const pageVariants = {
   initial: (dir) => ({ x: dir > 0 ? '60%' : '-60%', opacity: 0, scale: 0.97 }),
   animate: { x: 0, opacity: 1, scale: 1 },
   exit: (dir) => ({ x: dir > 0 ? '-60%' : '60%', opacity: 0, scale: 0.97 }),
+}
+
+function MisconfiguredScreen() {
+  return (
+    <div style={{
+      minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 12,
+      background: '#080808', fontFamily: 'Inter, sans-serif', padding: 32, textAlign: 'center',
+    }}>
+      <div style={{ fontSize: 32 }}>⚠️</div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: '#ff6b6b' }}>Missing environment variables</div>
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, maxWidth: 300 }}>
+        <code style={{ color: '#00ff88', fontSize: 11 }}>VITE_SUPABASE_URL</code> and{' '}
+        <code style={{ color: '#00ff88', fontSize: 11 }}>VITE_SUPABASE_ANON_KEY</code> must be set
+        in Vercel → Settings → Environment Variables, then redeploy.
+      </div>
+    </div>
+  )
 }
 
 function LoadingScreen() {
@@ -56,6 +74,7 @@ export default function App() {
   const [activePage, setActivePage] = useState('dashboard')
   const [direction, setDirection] = useState(1)
 
+  if (supabaseMisconfigured) return <MisconfiguredScreen />
   if (loading) return <LoadingScreen />
   if (!user)   return <AuthPage />
 
