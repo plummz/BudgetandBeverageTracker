@@ -46,21 +46,13 @@ export function AuthProvider({ children }) {
   }, [loadProfile])
 
   const signUp = useCallback(async ({ email, password, displayName }) => {
+    // Profile is created automatically by the on_auth_user_created DB trigger
     const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
-      options: { data: { display_name: displayName } },
+      options: { data: { display_name: displayName.trim() } },
     })
     if (error) throw error
-
-    if (data.user) {
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: data.user.id,
-        display_name: displayName.trim(),
-        theme: 'dark',
-      })
-      if (profileError && profileError.code !== '23505') throw profileError
-    }
     return data
   }, [])
 
