@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#111111"/>
+      <stop offset="100%" stop-color="#0a0a0a"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00ff88"/>
+      <stop offset="100%" stop-color="#00cc6a"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="0" stdDeviation="16" flood-color="#00ff88" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- Border glow -->
+  <rect width="512" height="512" rx="112" fill="none" stroke="#00ff88" stroke-width="6" opacity="0.25"/>
+  <!-- Peso sign with glow -->
+  <text x="256" y="310" font-family="Arial Black, sans-serif" font-weight="900" font-size="220" text-anchor="middle" fill="url(#glow)" filter="url(#shadow)" letter-spacing="-8">₱</text>
+  <!-- Bottom accent line -->
+  <rect x="128" y="392" width="256" height="10" rx="5" fill="url(#glow)" opacity="0.6"/>
+  <!-- App name -->
+  <text x="256" y="466" font-family="Arial, sans-serif" font-weight="700" font-size="32" text-anchor="middle" fill="#ffffff" opacity="0.5" letter-spacing="6">BUDGETFLOW</text>
+</svg>
