@@ -49,8 +49,8 @@ export default function App() {
           : 'radial-gradient(ellipse at 30% 0%, rgba(0,200,100,0.07) 0%, #f4f7fc 55%)',
       }}
     >
-      {/* Theme toggle — top right */}
-      <div className="absolute top-3 right-4 z-50">
+      {/* Top bar: theme toggle sits in flow so it never overlaps banner X */}
+      <div className="shrink-0 flex justify-end px-3 pt-2">
         <button
           onClick={toggle}
           className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
