@@ -1,66 +1,81 @@
-import { useState, useCallback, useMemo } from 'react'
-import { storage, STORAGE_KEYS } from '../utils/storage'
+import { useState, useCallback, useMemo, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 import { formatDateKey } from '../utils/formatters'
 
-const DEFAULT = {
-  streak: 0,
-  longestStreak: 0,
-  checkedDays: [],
-  lastChecked: null,
-  startDate: null,
-}
+const DEFAULT = { streak: 0, longestStreak: 0, checkedDays: [], lastChecked: null, startDate: null }
+
+const toState = (r) => ({
+  streak: r.streak,
+  longestStreak: r.longest_streak,
+  checkedDays: r.checked_days ?? [],
+  lastChecked: r.last_checked,
+  startDate: r.start_date,
+})
 
 export function useSodaChallenge() {
-  const [state, setState] = useState(() => storage.get(STORAGE_KEYS.SODA, DEFAULT))
+  const { user } = useAuth()
+  const [state, setState] = useState(DEFAULT)
 
-  const save = useCallback((next) => {
+  useEffect(() => {
+    if (!user) { setState(DEFAULT); return }
+    let live = true
+
+    supabase.from('soda_challenge').select('*').eq('user_id', user.id).single().then(({ data }) => {
+      if (!live) return
+      setState(data ? toState(data) : DEFAULT)
+    })
+
+    return () => { live = false }
+  }, [user?.id])
+
+  const persist = useCallback(async (next) => {
     setState(next)
-    storage.set(STORAGE_KEYS.SODA, next)
-  }, [])
+    await supabase.from('soda_challenge').upsert({
+      user_id: user.id,
+      streak: next.streak,
+      longest_streak: next.longestStreak,
+      checked_days: next.checkedDays,
+      last_checked: next.lastChecked,
+      start_date: next.startDate,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+  }, [user?.id])
 
   const todayKey = formatDateKey()
   const checkedToday = state.checkedDays.includes(todayKey)
 
   const checkToday = useCallback(() => {
     if (checkedToday) return
-
     const yesterday = new Date()
     yesterday.setDate(yesterday.getDate() - 1)
     const yesterdayKey = formatDateKey(yesterday)
     const wasStreaking = state.checkedDays.includes(yesterdayKey) || state.checkedDays.length === 0
-
     const newStreak = wasStreaking ? state.streak + 1 : 1
-    const newCheckedDays = [...state.checkedDays, todayKey]
-
     const next = {
       ...state,
       streak: newStreak,
       longestStreak: Math.max(state.longestStreak, newStreak),
-      checkedDays: newCheckedDays,
+      checkedDays: [...state.checkedDays, todayKey],
       lastChecked: todayKey,
       startDate: state.startDate || todayKey,
     }
-    save(next)
+    persist(next)
     if (navigator.vibrate) navigator.vibrate([50, 30, 50])
-  }, [state, checkedToday, todayKey, save])
+  }, [state, checkedToday, todayKey, persist])
 
-  const resetChallenge = useCallback(() => {
-    save(DEFAULT)
-  }, [save])
+  const resetChallenge = useCallback(() => persist(DEFAULT), [persist])
 
   const { earnedBadges } = useMemo(() => {
-    const { BADGES } = { BADGES: [3, 7, 14, 21, 30, 60, 100] }
-    const earned = BADGES.filter((d) => state.longestStreak >= d)
-    return { earnedBadges: earned }
+    const BADGES = [3, 7, 14, 21, 30, 60, 100]
+    return { earnedBadges: BADGES.filter(d => state.longestStreak >= d) }
   }, [state.longestStreak])
 
   const calendarMonth = useMemo(() => {
     const today = new Date()
-    const year = today.getFullYear()
+    const year  = today.getFullYear()
     const month = today.getMonth()
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
-    const firstDay = new Date(year, month, 1).getDay()
-    return { year, month, daysInMonth, firstDay }
+    return { year, month, daysInMonth: new Date(year, month + 1, 0).getDate(), firstDay: new Date(year, month, 1).getDay() }
   }, [])
 
   return {

@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
+import { AuthProvider } from './context/AuthContext.jsx'
 import './index.css'
 
 // One-time SW + cache nuke to fix stale PWA icon data in Chrome's internal store.
@@ -28,6 +29,8 @@ if (!localStorage.getItem(BUST_KEY)) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </React.StrictMode>
 )

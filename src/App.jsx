@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
 import { useTheme } from './hooks/useTheme'
+import { useAuth } from './context/AuthContext'
 import BottomNav from './components/BottomNav'
 import InstallBanner from './components/InstallBanner'
 import Dashboard from './pages/Dashboard'
@@ -9,6 +10,7 @@ import Collection from './pages/Collection'
 import Leaderboard from './pages/Leaderboard'
 import Analytics from './pages/Analytics'
 import SodaChallenge from './pages/SodaChallenge'
+import AuthPage from './pages/AuthPage'
 
 const PAGES = {
   dashboard: Dashboard,
@@ -25,10 +27,37 @@ const pageVariants = {
   exit: (dir) => ({ x: dir > 0 ? '-60%' : '60%', opacity: 0, scale: 0.97 }),
 }
 
+function LoadingScreen() {
+  return (
+    <div style={{
+      minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      background: 'radial-gradient(ellipse at 30% 0%, rgba(0,255,136,0.06) 0%, #080808 55%)',
+      fontFamily: 'Inter, sans-serif', gap: 16,
+    }}>
+      <div style={{
+        width: 52, height: 52, borderRadius: 14,
+        background: 'linear-gradient(135deg, #00ff88 0%, #00cc6a 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 24, boxShadow: '0 0 24px rgba(0,255,136,0.35)',
+        animation: 'pulse 1.4s ease-in-out infinite',
+      }}>
+        💰
+      </div>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(0.93)} }`}</style>
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>Loading…</div>
+    </div>
+  )
+}
+
 export default function App() {
   const { isDark, toggle } = useTheme()
+  const { user, loading, signOut } = useAuth()
   const [activePage, setActivePage] = useState('dashboard')
   const [direction, setDirection] = useState(1)
+
+  if (loading) return <LoadingScreen />
+  if (!user)   return <AuthPage />
 
   const handlePageChange = (page) => {
     if (page === activePage) return
@@ -49,8 +78,16 @@ export default function App() {
           : 'radial-gradient(ellipse at 30% 0%, rgba(0,200,100,0.07) 0%, #f4f7fc 55%)',
       }}
     >
-      {/* Top bar: theme toggle sits in flow so it never overlaps banner X */}
-      <div className="shrink-0 flex justify-end px-3 pt-2">
+      {/* Top bar: theme toggle + sign-out */}
+      <div className="shrink-0 flex justify-end items-center gap-2 px-3 pt-2">
+        <button
+          onClick={signOut}
+          title="Sign out"
+          className="h-9 px-3 rounded-full flex items-center justify-center transition-all active:scale-90 text-xs font-semibold"
+          style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)', color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)', fontFamily: 'Inter, sans-serif' }}
+        >
+          Sign out
+        </button>
         <button
           onClick={toggle}
           className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
