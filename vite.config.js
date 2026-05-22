@@ -15,6 +15,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      manifestFilename: 'manifest-v3.webmanifest',
       devOptions: { enabled: true },
       includeAssets: ['icons/*.png', 'icons/*.svg'],
       manifest: {
