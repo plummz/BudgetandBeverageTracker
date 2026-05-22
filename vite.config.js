@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  base: '/BudgetandBeverageTracker/',
   plugins: [
     react(),
     VitePWA({
@@ -17,8 +18,8 @@ export default defineConfig({
         background_color: '#0a0a0a',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
-        scope: '/',
+        start_url: '/BudgetandBeverageTracker/',
+        scope: '/BudgetandBeverageTracker/',
         lang: 'en',
         categories: ['finance', 'productivity', 'lifestyle'],
         icons: [
