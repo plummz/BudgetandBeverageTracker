@@ -24,24 +24,22 @@ export default defineConfig({
         categories: ['finance', 'productivity', 'lifestyle'],
         icons: [
           {
-            src: 'icons/icon-192.svg',
+            src: 'icons/icon-192.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'icons/icon-512.svg',
+            src: 'icons/icon-512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
-          }
-        ],
-        screenshots: [
+            type: 'image/png',
+            purpose: 'any'
+          },
           {
-            src: 'icons/screenshot-mobile.svg',
-            sizes: '390x844',
-            type: 'image/svg+xml',
-            form_factor: 'narrow'
+            src: 'icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
