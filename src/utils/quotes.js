@@ -19,9 +19,9 @@ export const sodaQuotes = [
   'Champions choose water. 🥇',
   'Real strength is saying no to what feels good but hurts you.',
   'Your future self is cheering you on! 🎉',
-  'One day at a time. You've got this! 💪',
+  "One day at a time. You've got this! 💪",
   'Health is wealth. Keep your streak alive!',
-  'The best project you'll ever work on is yourself.',
+  "The best project you'll ever work on is yourself.",
 ]
 
 export const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)]
