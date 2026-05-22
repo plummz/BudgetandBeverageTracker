@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="28%" cy="28%" r="82%">
+      <stop offset="0%" stop-color="#161616"/>
+      <stop offset="100%" stop-color="#070707"/>
+    </radialGradient>
+    <linearGradient id="ln" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00cc6a"/>
+      <stop offset="100%" stop-color="#00ff88"/>
+    </linearGradient>
+    <linearGradient id="gfill" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00ff88" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#00ff88" stop-opacity="0.01"/>
+    </linearGradient>
+    <filter id="gl" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="13" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="rg" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <!-- Subtle horizontal grid lines -->
+  <line x1="68" y1="178" x2="444" y2="178" stroke="#00ff88" stroke-width="1.5" opacity="0.07"/>
+  <line x1="68" y1="268" x2="444" y2="268" stroke="#00ff88" stroke-width="1.5" opacity="0.07"/>
+  <line x1="68" y1="358" x2="444" y2="358" stroke="#00ff88" stroke-width="1.5" opacity="0.07"/>
+
+  <!-- Chart area fill -->
+  <polygon points="88,372 192,215 312,288 436,108 436,435 88,435" fill="url(#gfill)"/>
+
+  <!-- Chart line with glow -->
+  <polyline
+    points="88,372 192,215 312,288 436,108"
+    fill="none"
+    stroke="url(#ln)"
+    stroke-width="22"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    filter="url(#gl)"
+  />
+
+  <!-- Data-point dots -->
+  <circle cx="88"  cy="372" r="17" fill="#00ff88" filter="url(#gl)"/>
+  <circle cx="192" cy="215" r="17" fill="#00ff88" filter="url(#gl)"/>
+  <circle cx="312" cy="288" r="17" fill="#00ff88" filter="url(#gl)"/>
+  <circle cx="436" cy="108" r="17" fill="#00ff88" filter="url(#gl)"/>
+
+  <!-- Scarlet "live" indicator — top right -->
+  <circle cx="420" cy="86" r="19" fill="#ff3131" filter="url(#rg)"/>
+  <circle cx="420" cy="86" r="26" fill="none" stroke="#ff3131" stroke-width="2.5" opacity="0.35"/>
+</svg>
