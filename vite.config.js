@@ -2,20 +2,17 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-const BASE = '/BudgetandBeverageTracker/'
-
-// v3 suffix forces Chrome to re-fetch icons (busts stale PWA install cache)
 function icon(file, sizes, purpose = 'any') {
-  return { src: `${BASE}icons/${file}`, sizes, type: 'image/png', purpose }
+  return { src: `/icons/${file}`, sizes, type: 'image/png', purpose }
 }
 
 export default defineConfig({
-  base: BASE,
+  base: '/',
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      manifestFilename: 'manifest-v3.webmanifest',
+      manifestFilename: 'manifest.webmanifest',
       devOptions: { enabled: true },
       includeAssets: ['icons/*.png', 'icons/*.svg'],
       manifest: {
@@ -26,20 +23,20 @@ export default defineConfig({
         background_color: '#0a0a0a',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: BASE,
-        scope: BASE,
+        start_url: '/',
+        scope: '/',
         lang: 'en',
         categories: ['finance', 'productivity', 'lifestyle'],
         icons: [
-          icon('icon-72-v3.png',          '72x72'),
-          icon('icon-96-v3.png',          '96x96'),
-          icon('icon-128-v3.png',         '128x128'),
-          icon('icon-144-v3.png',         '144x144'),
-          icon('icon-152-v3.png',         '152x152'),
-          icon('icon-192-v3.png',         '192x192'),
-          icon('icon-384-v3.png',         '384x384'),
-          icon('icon-512-v3.png',         '512x512'),
-          icon('icon-maskable-512-v3.png','512x512', 'maskable'),
+          icon('icon-72-v3.png',           '72x72'),
+          icon('icon-96-v3.png',           '96x96'),
+          icon('icon-128-v3.png',          '128x128'),
+          icon('icon-144-v3.png',          '144x144'),
+          icon('icon-152-v3.png',          '152x152'),
+          icon('icon-192-v3.png',          '192x192'),
+          icon('icon-384-v3.png',          '384x384'),
+          icon('icon-512-v3.png',          '512x512'),
+          icon('icon-maskable-512-v3.png', '512x512', 'maskable'),
         ],
       },
       workbox: {
