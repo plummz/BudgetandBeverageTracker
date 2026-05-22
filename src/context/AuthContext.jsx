@@ -22,7 +22,11 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (supabaseMisconfigured) { setLoading(false); return }
 
+    // Failsafe: never stay on loading screen more than 6 seconds
+    const timeout = setTimeout(() => setLoading(false), 6000)
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timeout)
       const u = session?.user ?? null
       setUser(u)
       if (u) {
@@ -30,7 +34,7 @@ export function AuthProvider({ children }) {
       } else {
         setLoading(false)
       }
-    })
+    }).catch(() => { clearTimeout(timeout); setLoading(false) })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const u = session?.user ?? null
@@ -42,7 +46,7 @@ export function AuthProvider({ children }) {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => { clearTimeout(timeout); subscription.unsubscribe() }
   }, [loadProfile])
 
   const signUp = useCallback(async ({ email, password, displayName }) => {
