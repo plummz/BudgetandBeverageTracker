@@ -4,12 +4,12 @@ import { Toaster } from 'react-hot-toast'
 import { useTheme } from './hooks/useTheme'
 import { useAuth, supabaseMisconfigured } from './context/AuthContext'
 import BottomNav from './components/BottomNav'
-import InstallBanner from './components/InstallBanner'
 import Dashboard from './pages/Dashboard'
 import Collection from './pages/Collection'
 import Leaderboard from './pages/Leaderboard'
 import Analytics from './pages/Analytics'
 import SodaChallenge from './pages/SodaChallenge'
+import HealthRecord from './pages/HealthRecord'
 import AuthPage from './pages/AuthPage'
 
 const PAGES = {
@@ -17,9 +17,10 @@ const PAGES = {
   collection: Collection,
   leaderboard: Leaderboard,
   analytics: Analytics,
+  health: HealthRecord,
   soda: SodaChallenge,
 }
-const PAGE_ORDER = ['dashboard', 'collection', 'leaderboard', 'analytics', 'soda']
+const PAGE_ORDER = ['dashboard', 'collection', 'leaderboard', 'analytics', 'health', 'soda']
 
 const pageVariants = {
   initial: (dir) => ({ x: dir > 0 ? '60%' : '-60%', opacity: 0, scale: 0.97 }),
@@ -132,9 +133,6 @@ export default function App() {
           )}
         </button>
       </div>
-
-      {/* Install banner */}
-      <InstallBanner />
 
       {/* Page transitions */}
       <div className="flex-1 overflow-hidden relative">
