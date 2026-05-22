@@ -6,17 +6,24 @@ import BottomNav from './components/BottomNav'
 import InstallBanner from './components/InstallBanner'
 import Dashboard from './pages/Dashboard'
 import Collection from './pages/Collection'
+import Leaderboard from './pages/Leaderboard'
+import Analytics from './pages/Analytics'
 import SodaChallenge from './pages/SodaChallenge'
 
-const PAGES = { dashboard: Dashboard, collection: Collection, soda: SodaChallenge }
+const PAGES = {
+  dashboard: Dashboard,
+  collection: Collection,
+  leaderboard: Leaderboard,
+  analytics: Analytics,
+  soda: SodaChallenge,
+}
+const PAGE_ORDER = ['dashboard', 'collection', 'leaderboard', 'analytics', 'soda']
 
 const pageVariants = {
-  initial: (dir) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
-  animate: { x: 0, opacity: 1 },
-  exit: (dir) => ({ x: dir > 0 ? '-100%' : '100%', opacity: 0 }),
+  initial: (dir) => ({ x: dir > 0 ? '60%' : '-60%', opacity: 0, scale: 0.97 }),
+  animate: { x: 0, opacity: 1, scale: 1 },
+  exit: (dir) => ({ x: dir > 0 ? '-60%' : '60%', opacity: 0, scale: 0.97 }),
 }
-
-const PAGE_ORDER = ['dashboard', 'collection', 'soda']
 
 export default function App() {
   const { isDark, toggle } = useTheme()
@@ -33,47 +40,47 @@ export default function App() {
 
   const ActivePage = PAGES[activePage]
 
-  const bgStyle = isDark
-    ? { background: 'radial-gradient(ellipse at 20% 0%, rgba(0,255,136,0.04) 0%, #0a0a0a 50%)' }
-    : { background: 'radial-gradient(ellipse at 20% 0%, rgba(0,200,100,0.08) 0%, #f0f4f8 50%)' }
-
   return (
     <div
-      className={`h-dvh w-full flex flex-col overflow-hidden relative ${isDark ? 'dark' : 'light'}`}
-      style={bgStyle}
+      className={`h-dvh w-full flex flex-col overflow-hidden ${isDark ? 'dark' : 'light'}`}
+      style={{
+        background: isDark
+          ? 'radial-gradient(ellipse at 30% 0%, rgba(0,255,136,0.04) 0%, #080808 55%)'
+          : 'radial-gradient(ellipse at 30% 0%, rgba(0,200,100,0.07) 0%, #f4f7fc 55%)',
+      }}
     >
-      {/* Theme toggle */}
-      <div className="absolute top-4 right-4 z-50">
+      {/* Theme toggle — top right */}
+      <div className="absolute top-3 right-4 z-50">
         <button
           onClick={toggle}
           className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
-          style={{ background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}
-          aria-label="Toggle theme"
+          style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)' }}
         >
           {isDark ? (
-            <svg viewBox="0 0 24 24" className="w-4.5 h-4.5 text-yellow-300 fill-yellow-300" width={18}>
+            <svg viewBox="0 0 24 24" width="16" fill="#fcd34d" stroke="#fcd34d" strokeWidth="0">
               <circle cx="12" cy="12" r="5" />
-              <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
+                <line key={i}
+                  x1={12 + 7 * Math.cos((deg * Math.PI) / 180)}
+                  y1={12 + 7 * Math.sin((deg * Math.PI) / 180)}
+                  x2={12 + 9.5 * Math.cos((deg * Math.PI) / 180)}
+                  y2={12 + 9.5 * Math.sin((deg * Math.PI) / 180)}
+                  stroke="#fcd34d" strokeWidth="2" strokeLinecap="round"
+                />
+              ))}
             </svg>
           ) : (
-            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-gray-700" width={16}>
+            <svg viewBox="0 0 24 24" width="16" fill="#374151">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
             </svg>
           )}
         </button>
       </div>
 
-      {/* Install Banner */}
+      {/* Install banner */}
       <InstallBanner />
 
-      {/* Page area */}
+      {/* Page transitions */}
       <div className="flex-1 overflow-hidden relative">
         <AnimatePresence custom={direction} mode="wait">
           <motion.div
@@ -83,7 +90,7 @@ export default function App() {
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{ type: 'tween', duration: 0.25, ease: 'easeInOut' }}
+            transition={{ type: 'spring', stiffness: 380, damping: 34, mass: 0.9 }}
             className="absolute inset-0"
           >
             <ActivePage isDark={isDark} />
@@ -91,28 +98,26 @@ export default function App() {
         </AnimatePresence>
       </div>
 
-      {/* Bottom Nav */}
+      {/* Bottom nav */}
       <BottomNav active={activePage} onChange={handlePageChange} />
 
-      {/* Toast notifications */}
+      {/* Toasts */}
       <Toaster
         position="top-center"
         toastOptions={{
           style: {
-            background: isDark ? '#1a1a1a' : '#ffffff',
+            background: isDark ? '#161616' : '#ffffff',
             color: isDark ? '#ffffff' : '#0a0a0a',
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.09)'}`,
             borderRadius: 16,
-            fontSize: 14,
+            fontSize: 13,
             fontFamily: 'Inter, sans-serif',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            fontWeight: 500,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+            maxWidth: 320,
           },
-          success: {
-            iconTheme: { primary: '#00ff88', secondary: '#0a0a0a' },
-          },
-          error: {
-            iconTheme: { primary: '#ff3131', secondary: '#ffffff' },
-          },
+          success: { iconTheme: { primary: '#00ff88', secondary: '#080808' } },
+          error: { iconTheme: { primary: '#ff3131', secondary: '#ffffff' } },
         }}
       />
     </div>

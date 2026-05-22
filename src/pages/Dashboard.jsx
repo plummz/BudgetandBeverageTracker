@@ -6,214 +6,196 @@ import Modal from '../components/Modal'
 import AnimatedNumber from '../components/AnimatedNumber'
 import { formatDate, formatTime, getWeekDays } from '../utils/formatters'
 import { EXPENSE_CATEGORIES, getRandom, budgetQuotes } from '../utils/quotes'
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
-} from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
-const [quote] = [getRandom(budgetQuotes)]
+const quote = getRandom(budgetQuotes)
 
 const ENTRY_TYPES = [
   { id: 'expense', label: 'Expense', color: '#ff3131', emoji: '💸' },
-  { id: 'income', label: 'Extra Income', color: '#00ff88', emoji: '💰' },
+  { id: 'income', label: 'Income', color: '#00ff88', emoji: '💰' },
   { id: 'savings', label: 'Savings', color: '#3b82f6', emoji: '🏦' },
 ]
 
 export default function Dashboard({ isDark }) {
   const { allowance, entries, setAllowance, addEntry, deleteEntry, stats } = useBudget()
 
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showAllowanceModal, setShowAllowanceModal] = useState(false)
-  const [showHistoryModal, setShowHistoryModal] = useState(false)
-  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [showAdd, setShowAdd] = useState(false)
+  const [showAllowance, setShowAllowance] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const [form, setForm] = useState({ type: 'expense', category: 'food', amount: '', note: '' })
   const [newAllowance, setNewAllowance] = useState(String(allowance))
 
   const textColor = isDark ? 'text-white' : 'text-gray-900'
-  const mutedColor = isDark ? 'text-white/50' : 'text-gray-500'
+  const mutedColor = isDark ? 'text-white/45' : 'text-gray-500'
 
-  const todayEntries = entries.filter((e) => {
-    const today = new Date().toISOString().split('T')[0]
-    return e.date === today
-  })
+  const today = new Date().toISOString().split('T')[0]
+  const todayEntries = entries.filter((e) => e.date === today)
 
-  const weekDays = getWeekDays()
   const chartData = useMemo(() => {
-    return weekDays.map((day) => {
-      const dayExpenses = entries
-        .filter((e) => e.date === day && e.type === 'expense')
-        .reduce((s, e) => s + e.amount, 0)
-      const daySaved = entries
-        .filter((e) => e.date === day && e.type === 'savings')
-        .reduce((s, e) => s + e.amount, 0)
+    return getWeekDays().map((day) => {
+      const spent = entries.filter((e) => e.date === day && e.type === 'expense').reduce((s, e) => s + e.amount, 0)
+      const saved = entries.filter((e) => e.date === day && e.type === 'savings').reduce((s, e) => s + e.amount, 0)
       const label = new Date(day + 'T00:00:00').toLocaleDateString('en-PH', { weekday: 'short' })
-      return { day: label, spent: dayExpenses, saved: daySaved }
+      return { day: label, spent, saved }
     })
-  }, [entries, weekDays])
-
-  const handleAddEntry = () => {
-    if (!form.amount || parseFloat(form.amount) <= 0) {
-      toast.error('Enter a valid amount')
-      return
-    }
-    addEntry(form)
-    setForm({ type: 'expense', category: 'food', amount: '', note: '' })
-    setShowAddModal(false)
-    toast.success(`${form.type === 'expense' ? 'Expense' : form.type === 'income' ? 'Income' : 'Savings'} added!`)
-  }
-
-  const handleSetAllowance = () => {
-    const amt = parseFloat(newAllowance)
-    if (isNaN(amt) || amt < 0) { toast.error('Invalid amount'); return }
-    setAllowance(amt)
-    setShowAllowanceModal(false)
-    toast.success('Allowance updated!')
-  }
+  }, [entries])
 
   const spentPct = stats.totalIncome > 0 ? Math.min((stats.totalExpenses / stats.totalIncome) * 100, 100) : 0
   const savedPct = stats.totalIncome > 0 ? Math.min((stats.totalSaved / stats.totalIncome) * 100, 100) : 0
 
+  const handleAdd = () => {
+    if (!form.amount || parseFloat(form.amount) <= 0) { toast.error('Enter a valid amount'); return }
+    addEntry(form)
+    setForm({ type: 'expense', category: 'food', amount: '', note: '' })
+    setShowAdd(false)
+    toast.success('Entry added!')
+  }
+
+  const handleSetAllowance = () => {
+    const n = parseFloat(newAllowance)
+    if (isNaN(n) || n < 0) { toast.error('Invalid amount'); return }
+    setAllowance(n)
+    setShowAllowance(false)
+    toast.success('Allowance updated!')
+  }
+
   const getCatEmoji = (id) => EXPENSE_CATEGORIES.find((c) => c.id === id)?.emoji || '📦'
+  const getCatLabel = (id) => EXPENSE_CATEGORIES.find((c) => c.id === id)?.label || id
 
   return (
-    <div className="page-container gap-4 px-4 pt-4">
+    <div className="page gap-4">
       {/* Header */}
-      <div className="flex items-start justify-between shrink-0">
-        <div>
-          <h1 className={`text-2xl font-black ${textColor}`}>BudgetFlow</h1>
-          <p className={`text-sm ${mutedColor}`}>
-            {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}
-          </p>
+      <div className="px-4 pt-5 pb-1 shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className={`text-2xl font-black ${textColor}`}>Budget</h1>
+            <p className={`text-sm ${mutedColor}`}>
+              {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => { setNewAllowance(String(allowance)); setShowAllowance(true) }}
+            className="text-right"
+          >
+            <p className={`text-[10px] ${mutedColor} uppercase tracking-wide`}>Daily Budget</p>
+            <p className="neon-text font-black text-xl font-mono">₱{allowance.toLocaleString()}</p>
+          </motion.button>
         </div>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => { setNewAllowance(String(allowance)); setShowAllowanceModal(true) }}
-          className="flex flex-col items-end"
-        >
-          <span className={`text-xs ${mutedColor}`}>Daily Budget</span>
-          <span className="neon-text font-black text-xl font-mono">₱{allowance.toLocaleString()}</span>
-        </motion.button>
       </div>
 
-      {/* Quote */}
+      {/* Balance card */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-card px-4 py-3 shrink-0"
+        className="mx-4 glass-high shrink-0"
+        style={{ border: '1px solid rgba(0,255,136,0.18)', boxShadow: '0 0 32px rgba(0,255,136,0.08)' }}
       >
-        <p className={`text-xs italic ${mutedColor}`}>💡 {quote}</p>
-      </motion.div>
+        <div className="p-5">
+          <p className={`text-xs font-semibold uppercase tracking-widest ${mutedColor} mb-1`}>Remaining Balance</p>
+          <AnimatedNumber
+            value={stats.balance}
+            prefix="₱"
+            className={`text-5xl font-black font-mono ${stats.balance >= 0 ? 'neon-text' : 'scarlet-text'}`}
+          />
 
-      {/* Balance Card */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.05 }}
-        className="glass-card-elevated shrink-0 p-5 neon-border"
-      >
-        <p className={`text-xs font-medium uppercase tracking-widest ${mutedColor} mb-1`}>Remaining Balance</p>
-        <AnimatedNumber
-          value={stats.balance}
-          prefix="₱"
-          className={`text-4xl font-black font-mono ${stats.balance >= 0 ? 'neon-text' : 'scarlet-text'}`}
-        />
-
-        <div className="mt-4 space-y-2">
-          {/* Spent bar */}
-          <div>
-            <div className="flex justify-between text-xs mb-1">
-              <span className={mutedColor}>Spent</span>
-              <span className="scarlet-text font-mono">₱{stats.totalExpenses.toFixed(2)}</span>
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: '#ff3131' }}
-                initial={{ width: 0 }}
-                animate={{ width: `${spentPct}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-              />
-            </div>
-          </div>
-          {/* Saved bar */}
-          <div>
-            <div className="flex justify-between text-xs mb-1">
-              <span className={mutedColor}>Saved</span>
-              <span className="neon-text font-mono">₱{stats.totalSaved.toFixed(2)}</span>
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: '#00ff88' }}
-                initial={{ width: 0 }}
-                animate={{ width: `${savedPct}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
-              />
-            </div>
+          <div className="mt-5 space-y-3">
+            {[
+              { label: 'Spent', value: stats.totalExpenses, pct: spentPct, color: '#ff3131' },
+              { label: 'Saved', value: stats.totalSaved, pct: savedPct, color: '#3b82f6' },
+            ].map((bar) => (
+              <div key={bar.label}>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className={mutedColor}>{bar.label}</span>
+                  <span className="font-mono font-bold" style={{ color: bar.color }}>₱{bar.value.toFixed(2)}</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: bar.color }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${bar.pct}%` }}
+                    transition={{ duration: 0.9, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </motion.div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-3 shrink-0">
+      {/* Quick stats */}
+      <div className="px-4 grid grid-cols-3 gap-2.5 shrink-0">
         {[
-          { label: 'Budget', value: stats.totalIncome, color: '#fff', emoji: '💵' },
+          { label: 'Budget', value: stats.totalIncome, color: 'rgba(255,255,255,0.85)', emoji: '💵' },
           { label: 'Spent', value: stats.totalExpenses, color: '#ff3131', emoji: '💸' },
-          { label: 'Saved', value: stats.totalSaved, color: '#00ff88', emoji: '🏦' },
-        ].map((stat) => (
+          { label: 'Saved', value: stats.totalSaved, color: '#3b82f6', emoji: '🏦' },
+        ].map((s, i) => (
           <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 12 }}
+            key={s.label}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card p-3 text-center"
+            transition={{ delay: i * 0.05 }}
+            className="glass p-3 text-center rounded-2xl"
           >
-            <p className="text-xl mb-0.5">{stat.emoji}</p>
-            <AnimatedNumber value={stat.value} prefix="₱" decimals={0} className="text-sm font-bold font-mono" style={{ color: stat.color }} />
-            <p className={`text-xs ${mutedColor} mt-0.5`}>{stat.label}</p>
+            <p className="text-lg mb-0.5">{s.emoji}</p>
+            <AnimatedNumber
+              value={s.value}
+              prefix="₱"
+              decimals={0}
+              className="text-sm font-black font-mono"
+              style={{ color: s.color }}
+            />
+            <p className={`text-[10px] ${mutedColor} mt-0.5`}>{s.label}</p>
           </motion.div>
         ))}
       </div>
 
-      {/* Weekly Chart */}
+      {/* Motivational quote */}
+      <div className="mx-4 shrink-0">
+        <div className="glass px-4 py-3 rounded-2xl" style={{ borderLeft: '3px solid rgba(0,255,136,0.4)' }}>
+          <p className={`text-xs italic ${mutedColor}`}>"{quote}"</p>
+        </div>
+      </div>
+
+      {/* Weekly chart */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.15 }}
-        className="glass-card p-4 shrink-0"
+        transition={{ delay: 0.1 }}
+        className="mx-4 glass-md p-4 rounded-2xl shrink-0"
       >
-        <p className={`text-sm font-semibold ${textColor} mb-3`}>7-Day Overview</p>
+        <p className={`text-sm font-bold ${textColor} mb-3`}>7-Day Overview</p>
         <ResponsiveContainer width="100%" height={110}>
-          <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
             <defs>
-              <linearGradient id="spentGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#ff3131" stopOpacity={0.4} />
+              <linearGradient id="spGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#ff3131" stopOpacity={0.35} />
                 <stop offset="95%" stopColor="#ff3131" stopOpacity={0} />
               </linearGradient>
-              <linearGradient id="savedGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#00ff88" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#00ff88" stopOpacity={0} />
+              <linearGradient id="svGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="day" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} axisLine={false} tickLine={false} />
-            <Tooltip
-              contentStyle={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 12 }}
-              labelStyle={{ color: 'rgba(255,255,255,0.6)' }}
-              itemStyle={{ color: '#fff' }}
-            />
-            <Area type="monotone" dataKey="spent" stroke="#ff3131" strokeWidth={2} fill="url(#spentGrad)" name="Spent ₱" />
-            <Area type="monotone" dataKey="saved" stroke="#00ff88" strokeWidth={2} fill="url(#savedGrad)" name="Saved ₱" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+            <XAxis dataKey="day" tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 12 }} labelStyle={{ color: 'rgba(255,255,255,0.6)' }} />
+            <Area type="monotone" dataKey="spent" stroke="#ff3131" strokeWidth={2} fill="url(#spGrad)" name="Spent ₱" />
+            <Area type="monotone" dataKey="saved" stroke="#3b82f6" strokeWidth={2} fill="url(#svGrad)" name="Saved ₱" />
           </AreaChart>
         </ResponsiveContainer>
       </motion.div>
 
       {/* Today's entries */}
-      <div className="shrink-0">
+      <div className="px-4 shrink-0">
         <div className="flex items-center justify-between mb-3">
-          <p className={`text-sm font-semibold ${textColor}`}>Today's Entries</p>
+          <p className="section-title">Today's Entries</p>
           {entries.length > 0 && (
-            <button onClick={() => setShowHistoryModal(true)} className={`text-xs ${mutedColor} active:opacity-50`}>
+            <button onClick={() => setShowHistory(true)} className={`text-xs ${mutedColor} active:opacity-50`}>
               View all →
             </button>
           )}
@@ -221,11 +203,7 @@ export default function Dashboard({ isDark }) {
 
         <AnimatePresence mode="popLayout">
           {todayEntries.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="glass-card p-6 text-center"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass p-6 text-center rounded-2xl">
               <p className="text-3xl mb-2">📭</p>
               <p className={`text-sm ${mutedColor}`}>No entries today. Tap + to add one.</p>
             </motion.div>
@@ -234,30 +212,28 @@ export default function Dashboard({ isDark }) {
               {todayEntries.slice(0, 8).map((entry, i) => (
                 <motion.div
                   key={entry.id}
-                  initial={{ opacity: 0, x: -16 }}
+                  initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 16, height: 0 }}
+                  exit={{ opacity: 0, x: 12, height: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className="glass-card flex items-center gap-3 px-4 py-3"
+                  className="glass flex items-center gap-3 px-4 py-3 rounded-2xl"
                 >
                   <span className="text-xl shrink-0">
                     {entry.type === 'expense' ? getCatEmoji(entry.category) : entry.type === 'income' ? '💰' : '🏦'}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate ${textColor}`}>
-                      {entry.note || (entry.type === 'expense' ? EXPENSE_CATEGORIES.find(c => c.id === entry.category)?.label : entry.type === 'income' ? 'Extra Income' : 'Savings')}
+                    <p className={`text-sm font-semibold truncate ${textColor}`}>
+                      {entry.note || (entry.type === 'expense' ? getCatLabel(entry.category) : entry.type === 'income' ? 'Extra Income' : 'Savings')}
                     </p>
                     <p className={`text-xs ${mutedColor}`}>{formatTime(entry.timestamp)}</p>
                   </div>
-                  <span
-                    className="text-sm font-bold font-mono shrink-0"
-                    style={{ color: entry.type === 'expense' ? '#ff3131' : entry.type === 'income' ? '#00ff88' : '#3b82f6' }}
-                  >
+                  <span className="text-sm font-bold font-mono shrink-0"
+                    style={{ color: entry.type === 'expense' ? '#ff3131' : entry.type === 'income' ? '#00ff88' : '#3b82f6' }}>
                     {entry.type === 'expense' ? '-' : '+'}₱{entry.amount.toFixed(2)}
                   </span>
                   <button
-                    onClick={() => setDeleteConfirm(entry.id)}
-                    className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center active:scale-90 transition-all"
+                    onClick={() => setDeleteTarget(entry.id)}
+                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 active:scale-90 transition-all"
                     style={{ background: 'rgba(255,49,49,0.1)' }}
                   >
                     <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="#ff3131" strokeWidth="2.5">
@@ -271,41 +247,39 @@ export default function Dashboard({ isDark }) {
         </AnimatePresence>
       </div>
 
-      {/* Spacer */}
       <div className="h-4 shrink-0" />
 
       {/* FAB */}
       <motion.button
         whileTap={{ scale: 0.88 }}
         whileHover={{ scale: 1.06 }}
-        onClick={() => setShowAddModal(true)}
-        className="fixed bottom-24 right-5 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-40"
+        onClick={() => setShowAdd(true)}
+        className="fixed bottom-20 right-5 w-14 h-14 rounded-full flex items-center justify-center z-40"
         style={{
-          background: 'linear-gradient(135deg, #00ff88, #00cc6a)',
+          background: 'linear-gradient(135deg,#00ff88,#00cc6a)',
           boxShadow: '0 8px 32px rgba(0,255,136,0.4)',
         }}
       >
-        <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="#0a0a0a" strokeWidth="3" strokeLinecap="round">
+        <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="#080808" strokeWidth="3" strokeLinecap="round">
           <path d="M12 5v14M5 12h14" />
         </svg>
       </motion.button>
 
-      {/* Add Entry Modal */}
-      <Modal open={showAddModal} onClose={() => setShowAddModal(false)} title="Add Entry">
+      {/* Add Modal */}
+      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Add Entry">
         <div className="space-y-4">
-          {/* Type selector */}
           <div>
-            <label className={`block text-xs font-medium ${mutedColor} mb-2`}>Type</label>
+            <span className="label">Type</span>
             <div className="grid grid-cols-3 gap-2">
               {ENTRY_TYPES.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setForm((f) => ({ ...f, type: t.id }))}
-                  className="py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95"
+                  className="py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
                   style={{
-                    background: form.type === t.id ? `${t.color}22` : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${form.type === t.id ? t.color + '60' : 'rgba(255,255,255,0.08)'}`,
-                    color: form.type === t.id ? t.color : 'rgba(255,255,255,0.6)',
+                    background: form.type === t.id ? `${t.color}1a` : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${form.type === t.id ? t.color + '55' : 'rgba(255,255,255,0.07)'}`,
+                    color: form.type === t.id ? t.color : 'rgba(255,255,255,0.5)',
                   }}
                 >
                   {t.emoji} {t.label}
@@ -314,23 +288,19 @@ export default function Dashboard({ isDark }) {
             </div>
           </div>
 
-          {/* Amount */}
           <div>
-            <label className={`block text-xs font-medium ${mutedColor} mb-2`}>Amount (₱)</label>
+            <span className="label">Amount (₱)</span>
             <input
-              type="number"
-              inputMode="decimal"
-              placeholder="0.00"
+              type="number" inputMode="decimal" placeholder="0.00"
               value={form.amount}
               onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-              className="input-field text-xl font-mono"
+              className="input text-2xl font-mono"
             />
           </div>
 
-          {/* Category (expense only) */}
           {form.type === 'expense' && (
             <div>
-              <label className={`block text-xs font-medium ${mutedColor} mb-2`}>Category</label>
+              <span className="label">Category</span>
               <div className="grid grid-cols-3 gap-2">
                 {EXPENSE_CATEGORIES.map((cat) => (
                   <button
@@ -339,8 +309,8 @@ export default function Dashboard({ isDark }) {
                     className="py-2 px-1 rounded-xl text-xs font-medium transition-all active:scale-95"
                     style={{
                       background: form.category === cat.id ? 'rgba(0,255,136,0.12)' : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${form.category === cat.id ? 'rgba(0,255,136,0.3)' : 'rgba(255,255,255,0.06)'}`,
-                      color: form.category === cat.id ? '#00ff88' : 'rgba(255,255,255,0.6)',
+                      border: `1px solid ${form.category === cat.id ? 'rgba(0,255,136,0.35)' : 'rgba(255,255,255,0.06)'}`,
+                      color: form.category === cat.id ? '#00ff88' : 'rgba(255,255,255,0.5)',
                     }}
                   >
                     {cat.emoji} {cat.label}
@@ -350,68 +320,65 @@ export default function Dashboard({ isDark }) {
             </div>
           )}
 
-          {/* Note */}
           <div>
-            <label className={`block text-xs font-medium ${mutedColor} mb-2`}>Note (optional)</label>
+            <span className="label">Note (optional)</span>
             <input
-              type="text"
-              placeholder="What was this for?"
+              type="text" placeholder="What was this for?"
               value={form.note}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-              className="input-field"
+              className="input"
             />
           </div>
 
-          <button onClick={handleAddEntry} className="btn-primary w-full text-sm font-bold mt-2">
-            Add Entry
-          </button>
+          <button onClick={handleAdd} className="btn-green w-full">Add Entry</button>
         </div>
       </Modal>
 
-      {/* Set Allowance Modal */}
-      <Modal open={showAllowanceModal} onClose={() => setShowAllowanceModal(false)} title="Set Daily Allowance">
+      {/* Allowance Modal */}
+      <Modal open={showAllowance} onClose={() => setShowAllowance(false)} title="Set Daily Allowance">
         <div className="space-y-4">
-          <p className={`text-sm ${mutedColor}`}>Set your daily allowance/budget for today.</p>
+          <p className={`text-sm ${mutedColor}`}>Set your daily budget for tracking expenses and savings.</p>
           <div>
-            <label className={`block text-xs font-medium ${mutedColor} mb-2`}>Amount (₱)</label>
+            <span className="label">Amount (₱)</span>
             <input
-              type="number"
-              inputMode="decimal"
-              placeholder="0.00"
+              type="number" inputMode="decimal" placeholder="0.00"
               value={newAllowance}
               onChange={(e) => setNewAllowance(e.target.value)}
-              className="input-field text-2xl font-mono"
+              className="input text-2xl font-mono"
               autoFocus
             />
           </div>
-          <button onClick={handleSetAllowance} className="btn-primary w-full font-bold">
-            Save Allowance
-          </button>
+          <div className="flex gap-2 flex-wrap">
+            {[50, 100, 150, 200, 300, 500].map((n) => (
+              <button key={n} onClick={() => setNewAllowance(String(n))} className="btn-ghost text-sm py-1.5 px-4">
+                ₱{n}
+              </button>
+            ))}
+          </div>
+          <button onClick={handleSetAllowance} className="btn-green w-full">Save</button>
         </div>
       </Modal>
 
       {/* History Modal */}
-      <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)} title="All Entries">
+      <Modal open={showHistory} onClose={() => setShowHistory(false)} title="All Entries">
         <div className="space-y-2">
           {entries.length === 0 ? (
             <p className={`text-sm ${mutedColor} text-center py-8`}>No entries yet.</p>
           ) : (
-            entries.map((entry) => (
-              <div key={entry.id} className="glass-card flex items-center gap-3 px-4 py-3">
-                <span className="text-xl shrink-0">
-                  {entry.type === 'expense' ? getCatEmoji(entry.category) : entry.type === 'income' ? '💰' : '🏦'}
+            entries.map((e) => (
+              <div key={e.id} className="glass flex items-center gap-3 px-4 py-3 rounded-2xl">
+                <span className="text-lg shrink-0">
+                  {e.type === 'expense' ? getCatEmoji(e.category) : e.type === 'income' ? '💰' : '🏦'}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${textColor}`}>
-                    {entry.note || EXPENSE_CATEGORIES.find(c => c.id === entry.category)?.label || entry.type}
+                  <p className={`text-sm font-semibold truncate ${textColor}`}>
+                    {e.note || getCatLabel(e.category)}
                   </p>
-                  <p className={`text-xs ${mutedColor}`}>{formatDate(entry.date)} · {formatTime(entry.timestamp)}</p>
+                  <p className={`text-xs ${mutedColor}`}>{formatDate(e.date)} · {formatTime(e.timestamp)}</p>
                 </div>
-                <span
-                  className="text-sm font-bold font-mono shrink-0"
-                  style={{ color: entry.type === 'expense' ? '#ff3131' : '#00ff88' }}
-                >
-                  {entry.type === 'expense' ? '-' : '+'}₱{entry.amount.toFixed(2)}
+                <span className="text-sm font-bold font-mono shrink-0"
+                  style={{ color: e.type === 'expense' ? '#ff3131' : '#00ff88' }}>
+                  {e.type === 'expense' ? '-' : '+'}₱{e.amount.toFixed(2)}
                 </span>
               </div>
             ))
@@ -419,15 +386,15 @@ export default function Dashboard({ isDark }) {
         </div>
       </Modal>
 
-      {/* Delete Confirm */}
-      <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Delete Entry?">
+      {/* Delete Modal */}
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Entry?">
         <div className="space-y-4">
           <p className={`text-sm ${mutedColor}`}>Are you sure you want to delete this entry?</p>
           <div className="flex gap-3">
-            <button onClick={() => setDeleteConfirm(null)} className="btn-ghost flex-1">Cancel</button>
+            <button onClick={() => setDeleteTarget(null)} className="btn-ghost flex-1">Cancel</button>
             <button
-              onClick={() => { deleteEntry(deleteConfirm); setDeleteConfirm(null); toast.success('Deleted') }}
-              className="btn-danger flex-1"
+              onClick={() => { deleteEntry(deleteTarget); setDeleteTarget(null); toast.success('Deleted') }}
+              className="btn-red flex-1"
             >
               Delete
             </button>

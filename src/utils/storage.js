@@ -1,10 +1,11 @@
 export const STORAGE_KEYS = {
   BUDGET: 'bf_budget',
   BUDGET_ENTRIES: 'bf_budget_entries',
-  COLLECTION: 'bf_collection',
+  SERVICES: 'bf_services',
+  COLLECTION_ENTRIES: 'bf_collection_entries',
+  CUSTOMERS: 'bf_customers',
   SODA: 'bf_soda',
   THEME: 'bf_theme',
-  ONBOARDED: 'bf_onboarded',
 }
 
 export const storage = {
@@ -24,10 +25,6 @@ export const storage = {
     }
   },
   remove(key) {
-    try {
-      localStorage.removeItem(key)
-    } catch {
-      // ignore
-    }
+    try { localStorage.removeItem(key) } catch { /* ignore */ }
   },
 }

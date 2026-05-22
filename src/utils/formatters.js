@@ -5,43 +5,36 @@ export const formatCurrency = (amount, symbol = '₱') => {
 
 export const formatCompact = (amount, symbol = '₱') => {
   const n = parseFloat(amount || 0)
-  if (Math.abs(n) >= 1000) {
-    return `${symbol}${(n / 1000).toFixed(1)}k`
-  }
+  if (Math.abs(n) >= 1000) return `${symbol}${(n / 1000).toFixed(1)}k`
   return `${symbol}${n.toFixed(2)}`
 }
 
-export const formatDateKey = (date = new Date()) => {
-  return date.toISOString().split('T')[0]
-}
+export const formatDateKey = (date = new Date()) => date.toISOString().split('T')[0]
 
-export const formatDate = (dateStr) => {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
-}
+export const formatDate = (dateStr) =>
+  new Date(dateStr).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
 
-export const formatTime = (dateStr) => {
-  return new Date(dateStr).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
-}
+export const formatTime = (dateStr) =>
+  new Date(dateStr).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
 
-export const formatDateTime = (dateStr) => {
-  return `${formatDate(dateStr)}, ${formatTime(dateStr)}`
-}
+export const formatDateTime = (dateStr) => `${formatDate(dateStr)}, ${formatTime(dateStr)}`
 
-export const formatDayName = (dateStr) => {
-  return new Date(dateStr).toLocaleDateString('en-PH', { weekday: 'short' })
-}
+export const formatDayShort = (dateStr) =>
+  new Date(dateStr + 'T00:00:00').toLocaleDateString('en-PH', { weekday: 'short' })
 
-export const getWeekDays = () => {
-  const today = new Date()
+export const isToday = (dateStr) => dateStr === formatDateKey(new Date())
+
+export const getLastNDays = (n) => {
   const days = []
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(today.getDate() - i)
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
     days.push(formatDateKey(d))
   }
   return days
 }
+
+export const getWeekDays = () => getLastNDays(7)
 
 export const getMonthDays = () => {
   const today = new Date()
@@ -54,14 +47,4 @@ export const getMonthDays = () => {
     days.push(formatDateKey(d))
   }
   return days
-}
-
-export const isToday = (dateStr) => {
-  return dateStr === formatDateKey(new Date())
-}
-
-export const isSameMonth = (dateStr) => {
-  const today = new Date()
-  const d = new Date(dateStr)
-  return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()
 }

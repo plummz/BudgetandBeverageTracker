@@ -5,11 +5,9 @@ const tabs = [
     id: 'dashboard',
     label: 'Budget',
     icon: (active) => (
-      <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6" stroke={active ? '#00ff88' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="7" height="7" rx="1.5" />
-        <rect x="14" y="3" width="7" height="7" rx="1.5" />
-        <rect x="3" y="14" width="7" height="7" rx="1.5" />
-        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke={active ? '#00ff88' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
       </svg>
     ),
   },
@@ -17,20 +15,39 @@ const tabs = [
     id: 'collection',
     label: 'Collect',
     icon: (active) => (
-      <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6" stroke={active ? '#00ff88' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v10M9 9.5C9 8.12 10.34 7 12 7s3 1.12 3 2.5c0 2.5-6 2.5-6 5 0 1.38 1.34 2.5 3 2.5s3-1.12 3-2.5" />
+      <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke={active ? '#00ff88' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <path d="M16 10a4 4 0 01-8 0" />
+      </svg>
+    ),
+  },
+  {
+    id: 'leaderboard',
+    label: 'Board',
+    icon: (active) => (
+      <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke={active ? '#00ff88' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+      </svg>
+    ),
+  },
+  {
+    id: 'analytics',
+    label: 'Stats',
+    icon: (active) => (
+      <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke={active ? '#00ff88' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10" />
+        <line x1="12" y1="20" x2="12" y2="4" />
+        <line x1="6" y1="20" x2="6" y2="14" />
       </svg>
     ),
   },
   {
     id: 'soda',
-    label: 'No Soda',
+    label: 'Streak',
     icon: (active) => (
-      <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 3h8l1 6H7L8 3z" stroke={active ? '#00ff88' : 'currentColor'} />
-        <path d="M7 9l.5 9a2 2 0 002 2h5a2 2 0 002-2L17 9" stroke={active ? '#00ff88' : 'currentColor'} />
-        <line x1="4" y1="4" x2="20" y2="20" stroke="#ff3131" strokeWidth="2.5" />
+      <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke={active ? '#00ff88' : 'currentColor'} />
       </svg>
     ),
   },
@@ -41,9 +58,9 @@ export default function BottomNav({ active, onChange }) {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 flex items-stretch"
       style={{
-        background: 'rgba(10,10,10,0.95)',
-        backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
+        background: 'rgba(8,8,8,0.97)',
+        backdropFilter: 'blur(24px)',
+        borderTop: '1px solid rgba(255,255,255,0.07)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
@@ -53,28 +70,28 @@ export default function BottomNav({ active, onChange }) {
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
-            className="flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-all duration-200 active:scale-95"
-            style={{ minHeight: 60 }}
+            className="flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-all duration-150 active:scale-90"
+            style={{ minHeight: 58 }}
           >
             <motion.div
-              animate={{ scale: isActive ? 1.15 : 1 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              className="relative"
+              animate={{ scale: isActive ? 1.1 : 1, y: isActive ? -1 : 0 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 25 }}
             >
               {tab.icon(isActive)}
-              {isActive && (
-                <motion.div
-                  layoutId="nav-dot"
-                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-neon-green"
-                />
-              )}
             </motion.div>
             <span
-              className="text-xs font-medium transition-colors duration-200"
-              style={{ color: isActive ? '#00ff88' : 'rgba(255,255,255,0.45)' }}
+              className="text-[10px] font-semibold tracking-wide transition-colors duration-150"
+              style={{ color: isActive ? '#00ff88' : 'rgba(255,255,255,0.35)' }}
             >
               {tab.label}
             </span>
+            {isActive && (
+              <motion.div
+                layoutId="nav-indicator"
+                className="absolute top-0 rounded-full"
+                style={{ width: 32, height: 2, background: '#00ff88', boxShadow: '0 0 8px #00ff88' }}
+              />
+            )}
           </button>
         )
       })}
