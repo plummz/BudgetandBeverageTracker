@@ -9,7 +9,13 @@ export const formatCompact = (amount, symbol = '₱') => {
   return `${symbol}${n.toFixed(2)}`
 }
 
-export const formatDateKey = (date = new Date()) => date.toISOString().split('T')[0]
+// Uses local date components (not UTC) so PH timezone (UTC+8) always gets the correct date
+export const formatDateKey = (date = new Date()) => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
 
 export const formatDate = (dateStr) =>
   new Date(dateStr).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
