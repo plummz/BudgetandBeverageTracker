@@ -7,21 +7,24 @@ const toCustomer = (r) => ({ id: r.id, name: r.name, createdAt: r.created_at })
 
 export function useCustomers(entries = []) {
   const { user } = useAuth()
+  const userId = user?.id
   const [customers, setCustomers] = useState([])
 
   useEffect(() => {
-    if (!user) { setCustomers([]); return }
+    if (!userId) { setCustomers([]); return }
     let live = true
 
-    supabase.from('customers').select('*').eq('user_id', user.id).order('created_at').then(({ data }) => {
+    supabase.from('customers').select('*').eq('user_id', userId).order('created_at').then(({ data, error }) => {
       if (!live) return
+      if (error) { console.error('[customers] load failed:', error.message); return }
       setCustomers((data ?? []).map(toCustomer))
     })
 
     return () => { live = false }
-  }, [user?.id])
+  }, [userId])
 
   const addCustomer = useCallback(async (name) => {
+    if (!userId) return null
     const trimmed = name.trim()
     if (!trimmed) return null
 
@@ -31,18 +34,19 @@ export function useCustomers(entries = []) {
     const c = { id: nanoid(), name: trimmed, createdAt: new Date().toISOString() }
     setCustomers(prev => [...prev, c])
     const { error } = await supabase.from('customers').insert({
-      id: c.id, user_id: user.id, name: c.name, created_at: c.createdAt,
+      id: c.id, user_id: userId, name: c.name, created_at: c.createdAt,
     })
-    if (error) setCustomers(prev => prev.filter(x => x.id !== c.id))
+    if (error) { console.error('[customers] addCustomer failed:', error.message); setCustomers(prev => prev.filter(x => x.id !== c.id)) }
     return c
-  }, [customers, user?.id])
+  }, [customers, userId])
 
   const deleteCustomer = useCallback(async (id) => {
+    if (!userId) return
     const snap = customers.find(c => c.id === id)
     setCustomers(prev => prev.filter(c => c.id !== id))
-    const { error } = await supabase.from('customers').delete().eq('id', id).eq('user_id', user.id)
-    if (error && snap) setCustomers(prev => [...prev, snap])
-  }, [customers, user?.id])
+    const { error } = await supabase.from('customers').delete().eq('id', id).eq('user_id', userId)
+    if (error) { console.error('[customers] deleteCustomer failed:', error.message); if (snap) setCustomers(prev => [...prev, snap]) }
+  }, [customers, userId])
 
   const leaderboard = useMemo(() => {
     return customers.map(customer => {

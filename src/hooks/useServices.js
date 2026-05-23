@@ -23,31 +23,30 @@ const toEntry = (r) => ({
 
 export function useServices() {
   const { user } = useAuth()
+  const userId = user?.id
   const [services, setServices] = useState([])
   const [entries, setEntries]   = useState([])
 
   useEffect(() => {
-    if (!user) { setServices([]); setEntries([]); return }
+    if (!userId) { setServices([]); setEntries([]); return }
     let live = true
 
     Promise.all([
-      supabase.from('services').select('*').eq('user_id', user.id).order('created_at'),
-      supabase.from('collection_entries').select('*').eq('user_id', user.id).order('timestamp', { ascending: false }),
+      supabase.from('services').select('*').eq('user_id', userId).order('created_at'),
+      supabase.from('collection_entries').select('*').eq('user_id', userId).order('timestamp', { ascending: false }),
     ]).then(async ([sr, er]) => {
       if (!live) return
+
+      if (sr.error) console.error('[services] load failed:', sr.error.message)
+      if (er.error) console.error('[collection] load failed:', er.error.message)
 
       let svcs = (sr.data ?? []).map(toService)
 
       // Seed default services for brand-new accounts
-      if (svcs.length === 0) {
+      if (svcs.length === 0 && !sr.error) {
         const defaults = DEFAULT_SERVICES.map(s => ({
-          id: s.id,
-          user_id: user.id,
-          name: s.name,
-          price: s.price,
-          color: s.color,
-          emoji: s.emoji,
-          created_at: new Date().toISOString(),
+          id: s.id, user_id: userId, name: s.name, price: s.price,
+          color: s.color, emoji: s.emoji, created_at: new Date().toISOString(),
         }))
         await supabase.from('services').insert(defaults)
         svcs = DEFAULT_SERVICES
@@ -58,9 +57,10 @@ export function useServices() {
     })
 
     return () => { live = false }
-  }, [user?.id])
+  }, [userId])
 
   const addService = useCallback(async (data) => {
+    if (!userId) return
     const s = {
       id: nanoid(),
       name: data.name.trim(),
@@ -71,26 +71,29 @@ export function useServices() {
     }
     setServices(prev => [...prev, s])
     const { error } = await supabase.from('services').insert({
-      id: s.id, user_id: user.id, name: s.name, price: s.price,
+      id: s.id, user_id: userId, name: s.name, price: s.price,
       color: s.color, emoji: s.emoji, created_at: s.createdAt,
     })
-    if (error) setServices(prev => prev.filter(x => x.id !== s.id))
+    if (error) { console.error('[services] addService failed:', error.message); setServices(prev => prev.filter(x => x.id !== s.id)) }
     return s
-  }, [user?.id])
+  }, [userId])
 
   const updateService = useCallback(async (id, updates) => {
+    if (!userId) return
     setServices(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s))
-    await supabase.from('services').update({
+    const { error } = await supabase.from('services').update({
       name: updates.name, price: updates.price, color: updates.color, emoji: updates.emoji,
-    }).eq('id', id).eq('user_id', user.id)
-  }, [user?.id])
+    }).eq('id', id).eq('user_id', userId)
+    if (error) console.error('[services] updateService failed:', error.message)
+  }, [userId])
 
   const deleteService = useCallback(async (id) => {
+    if (!userId) return
     const snap = services.find(s => s.id === id)
     setServices(prev => prev.filter(s => s.id !== id))
-    const { error } = await supabase.from('services').delete().eq('id', id).eq('user_id', user.id)
-    if (error && snap) setServices(prev => [...prev, snap])
-  }, [services, user?.id])
+    const { error } = await supabase.from('services').delete().eq('id', id).eq('user_id', userId)
+    if (error) { console.error('[services] deleteService failed:', error.message); if (snap) setServices(prev => [...prev, snap]) }
+  }, [services, userId])
 
   const addEntry = useCallback(async (serviceId, customerId, customerName) => {
     const service = services.find(s => s.id === serviceId)
@@ -113,7 +116,7 @@ export function useServices() {
 
     const { error } = await supabase.from('collection_entries').insert({
       id: entry.id,
-      user_id: user.id,
+      user_id: userId,
       service_id: entry.serviceId,
       service_name: entry.serviceName,
       service_color: entry.serviceColor,
@@ -124,18 +127,18 @@ export function useServices() {
       timestamp: entry.timestamp,
       date: entry.date,
     })
-    if (error) setEntries(prev => prev.filter(e => e.id !== entry.id))
+    if (error) { console.error('[collection] addEntry failed:', error.message); setEntries(prev => prev.filter(e => e.id !== entry.id)) }
     return entry
-  }, [services, user?.id])
+  }, [services, userId])
 
   const undoLast = useCallback(async () => {
-    if (!entries.length) return false
+    if (!userId || !entries.length) return false
     const [last, ...rest] = entries
     setEntries(rest)
-    const { error } = await supabase.from('collection_entries').delete().eq('id', last.id).eq('user_id', user.id)
-    if (error) setEntries(prev => [last, ...prev])
+    const { error } = await supabase.from('collection_entries').delete().eq('id', last.id).eq('user_id', userId)
+    if (error) { console.error('[collection] undoLast failed:', error.message); setEntries(prev => [last, ...prev]) }
     return true
-  }, [entries, user?.id])
+  }, [entries, userId])
 
   const serviceStats = useMemo(() => {
     const map = {}

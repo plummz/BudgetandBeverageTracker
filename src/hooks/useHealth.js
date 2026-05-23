@@ -62,27 +62,30 @@ const toEntry = (r) => ({
 
 export function useHealth() {
   const { user } = useAuth()
+  const userId = user?.id
   const [entries, setEntries] = useState([])
 
   useEffect(() => {
-    if (!user) { setEntries([]); return }
+    if (!userId) { setEntries([]); return }
     let live = true
     supabase
       .from('health_entries')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('timestamp', { ascending: false })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (!live) return
+        if (error) { console.error('[health] load failed:', error.message); return }
         setEntries((data ?? []).map(toEntry))
       })
     return () => { live = false }
-  }, [user?.id])
+  }, [userId])
 
   const addEntry = useCallback(async ({ mealType, foodName, calories, notes }) => {
+    if (!userId) return
     const row = {
       id: nanoid(),
-      user_id: user.id,
+      user_id: userId,
       date: formatDateKey(),
       timestamp: new Date().toISOString(),
       meal_type: mealType,
@@ -93,15 +96,16 @@ export function useHealth() {
     const mapped = toEntry(row)
     setEntries(prev => [mapped, ...prev])
     const { error } = await supabase.from('health_entries').insert(row)
-    if (error) setEntries(prev => prev.filter(e => e.id !== row.id))
-  }, [user?.id])
+    if (error) { console.error('[health] addEntry failed:', error.message); setEntries(prev => prev.filter(e => e.id !== row.id)) }
+  }, [userId])
 
   const deleteEntry = useCallback(async (id) => {
+    if (!userId) return
     const snap = entries.find(e => e.id === id)
     setEntries(prev => prev.filter(e => e.id !== id))
-    const { error } = await supabase.from('health_entries').delete().eq('id', id).eq('user_id', user.id)
-    if (error && snap) setEntries(prev => [snap, ...prev])
-  }, [entries, user?.id])
+    const { error } = await supabase.from('health_entries').delete().eq('id', id).eq('user_id', userId)
+    if (error) { console.error('[health] deleteEntry failed:', error.message); if (snap) setEntries(prev => [snap, ...prev]) }
+  }, [entries, userId])
 
   const today = formatDateKey()
   const todayEntries = useMemo(() => entries.filter(e => e.date === today), [entries, today])

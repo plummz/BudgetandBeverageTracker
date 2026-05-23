@@ -6,38 +6,44 @@ import { nanoid } from '../utils/nanoid'
 
 export function useBudget() {
   const { user } = useAuth()
+  const userId = user?.id
   const [allowance, setAllowanceState] = useState(0)
   const [entries, setEntries] = useState([])
 
   useEffect(() => {
-    if (!user) { setAllowanceState(0); setEntries([]); return }
+    if (!userId) { setAllowanceState(0); setEntries([]); return }
     let live = true
 
     Promise.all([
-      supabase.from('budget_settings').select('allowance').eq('user_id', user.id).single(),
-      supabase.from('budget_entries').select('*').eq('user_id', user.id).order('timestamp', { ascending: false }),
+      supabase.from('budget_settings').select('allowance').eq('user_id', userId).maybeSingle(),
+      supabase.from('budget_entries').select('*').eq('user_id', userId).order('timestamp', { ascending: false }),
     ]).then(([s, e]) => {
       if (!live) return
-      if (s.data) setAllowanceState(s.data.allowance)
-      if (e.data)  setEntries(e.data)
+      if (s.error) console.error('[budget] settings load failed:', s.error.message)
+      else if (s.data) setAllowanceState(s.data.allowance)
+      if (e.error) console.error('[budget] entries load failed:', e.error.message)
+      else if (e.data) setEntries(e.data)
     })
 
     return () => { live = false }
-  }, [user?.id])
+  }, [userId])
 
   const setAllowance = useCallback(async (amount) => {
+    if (!userId) return
     const parsed = parseFloat(amount) || 0
     setAllowanceState(parsed)
-    await supabase.from('budget_settings').upsert(
-      { user_id: user.id, allowance: parsed, updated_at: new Date().toISOString() },
+    const { error } = await supabase.from('budget_settings').upsert(
+      { user_id: userId, allowance: parsed, updated_at: new Date().toISOString() },
       { onConflict: 'user_id' }
     )
-  }, [user?.id])
+    if (error) console.error('[budget] setAllowance failed:', error.message)
+  }, [userId])
 
   const addEntry = useCallback(async (entry) => {
+    if (!userId) return
     const row = {
       id: nanoid(),
-      user_id: user.id,
+      user_id: userId,
       date: formatDateKey(),
       timestamp: new Date().toISOString(),
       type: entry.type,
@@ -47,10 +53,11 @@ export function useBudget() {
     }
     setEntries(prev => [row, ...prev])
     const { error } = await supabase.from('budget_entries').insert(row)
-    if (error) setEntries(prev => prev.filter(e => e.id !== row.id))
-  }, [user?.id])
+    if (error) { console.error('[budget] addEntry failed:', error.message); setEntries(prev => prev.filter(e => e.id !== row.id)) }
+  }, [userId])
 
   const editEntry = useCallback(async (id, updates) => {
+    if (!userId) return
     setEntries(prev => prev.map(e =>
       e.id === id ? { ...e, ...updates, amount: parseFloat(updates.amount) || e.amount } : e
     ))
@@ -59,19 +66,21 @@ export function useBudget() {
       category: updates.category ?? null,
       amount: parseFloat(updates.amount) || 0,
       note: updates.note ?? null,
-    }).eq('id', id).eq('user_id', user.id)
+    }).eq('id', id).eq('user_id', userId)
     if (error) {
-      const { data } = await supabase.from('budget_entries').select('*').eq('id', id).single()
+      console.error('[budget] editEntry failed:', error.message)
+      const { data } = await supabase.from('budget_entries').select('*').eq('id', id).maybeSingle()
       if (data) setEntries(prev => prev.map(e => e.id === id ? data : e))
     }
-  }, [user?.id])
+  }, [userId])
 
   const deleteEntry = useCallback(async (id) => {
+    if (!userId) return
     const snapshot = entries.find(e => e.id === id)
     setEntries(prev => prev.filter(e => e.id !== id))
-    const { error } = await supabase.from('budget_entries').delete().eq('id', id).eq('user_id', user.id)
-    if (error && snapshot) setEntries(prev => [snapshot, ...prev])
-  }, [entries, user?.id])
+    const { error } = await supabase.from('budget_entries').delete().eq('id', id).eq('user_id', userId)
+    if (error) { console.error('[budget] deleteEntry failed:', error.message); if (snapshot) setEntries(prev => [snapshot, ...prev]) }
+  }, [entries, userId])
 
   const stats = useMemo(() => {
     const today = formatDateKey()

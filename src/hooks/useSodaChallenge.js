@@ -15,32 +15,49 @@ const toState = (r) => ({
 
 export function useSodaChallenge() {
   const { user } = useAuth()
+  const userId = user?.id          // stable primitive — safe to use in closures
   const [state, setState] = useState(DEFAULT)
 
   useEffect(() => {
-    if (!user) { setState(DEFAULT); return }
+    if (!userId) { setState(DEFAULT); return }
     let live = true
 
-    supabase.from('soda_challenge').select('*').eq('user_id', user.id).single().then(({ data }) => {
-      if (!live) return
-      setState(data ? toState(data) : DEFAULT)
-    })
+    // maybeSingle() returns { data: null, error: null } for 0 rows
+    // vs { data: null, error: ... } for real errors — we never reset to DEFAULT on errors
+    supabase
+      .from('soda_challenge')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!live) return
+        if (error) {
+          console.error('[soda] load failed:', error.message)
+          return // keep current state — do NOT wipe to DEFAULT on errors
+        }
+        setState(data ? toState(data) : DEFAULT)
+      })
 
     return () => { live = false }
-  }, [user?.id])
+  }, [userId])
 
   const persist = useCallback(async (next) => {
+    if (!userId) return
     setState(next)
-    await supabase.from('soda_challenge').upsert({
-      user_id: user.id,
-      streak: next.streak,
-      longest_streak: next.longestStreak,
-      checked_days: next.checkedDays,
-      last_checked: next.lastChecked,
-      start_date: next.startDate,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
-  }, [user?.id])
+    const { error } = await supabase.from('soda_challenge').upsert(
+      {
+        user_id: userId,
+        streak: next.streak,
+        longest_streak: next.longestStreak,
+        checked_days: next.checkedDays,
+        last_checked: next.lastChecked,
+        start_date: next.startDate,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' }
+    )
+    if (error) console.error('[soda] persist failed:', error.message)
+  }, [userId])
 
   const todayKey = formatDateKey()
   const checkedToday = state.checkedDays.includes(todayKey)
