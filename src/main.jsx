@@ -7,7 +7,7 @@ import './index.css'
 // One-time SW + cache nuke to fix stale PWA icon data in Chrome's internal store.
 // Runs once per BUST_KEY, clears every cache bucket, unregisters the old SW,
 // then reloads so the fresh SW re-installs with the correct icons.
-const BUST_KEY = 'bf-cache-bust-v9'
+const BUST_KEY = 'bf-cache-bust-v10'
 if (!localStorage.getItem(BUST_KEY)) {
   localStorage.setItem(BUST_KEY, '1')
   ;(async () => {

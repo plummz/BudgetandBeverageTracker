@@ -22,7 +22,12 @@ export function useSodaChallenge() {
   useEffect(() => {
     if (!userId) { setState(DEFAULT); setLoading(false); return }
     setLoading(true)
-    let live = true
+    let cancelled = false
+
+    // Failsafe: never stay stuck on loading more than 5 seconds
+    const timeout = setTimeout(() => {
+      if (!cancelled) setLoading(false)
+    }, 5000)
 
     supabase
       .from('soda_challenge')
@@ -30,7 +35,8 @@ export function useSodaChallenge() {
       .eq('user_id', userId)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (!live) return
+        clearTimeout(timeout)
+        if (cancelled) return
         if (error) {
           console.error('[soda] load failed:', error.message)
           setLoading(false)
@@ -40,10 +46,10 @@ export function useSodaChallenge() {
         setLoading(false)
       })
 
-    return () => { live = false }
+    return () => { cancelled = true; clearTimeout(timeout) }
   }, [userId])
 
-  const persist = useCallback(async (next) => {
+  const persist = useCallback(async (next, prev) => {
     if (!userId) return
     setState(next)
     const { error } = await supabase.from('soda_challenge').upsert(
@@ -58,7 +64,11 @@ export function useSodaChallenge() {
       },
       { onConflict: 'user_id' }
     )
-    if (error) console.error('[soda] persist failed:', error.message)
+    if (error) {
+      console.error('[soda] persist failed:', error.message)
+      // Roll back to previous state so the UI matches the DB
+      if (prev) setState(prev)
+    }
   }, [userId])
 
   const todayKey = formatDateKey()
@@ -79,11 +89,11 @@ export function useSodaChallenge() {
       lastChecked: todayKey,
       startDate: state.startDate || todayKey,
     }
-    persist(next)
+    persist(next, state)
     if (navigator.vibrate) navigator.vibrate([50, 30, 50])
   }, [state, checkedToday, todayKey, persist])
 
-  const resetChallenge = useCallback(() => persist(DEFAULT), [persist])
+  const resetChallenge = useCallback(() => persist(DEFAULT, state), [persist, state])
 
   const { earnedBadges } = useMemo(() => {
     const BADGES = [3, 7, 14, 21, 30, 60, 100]
