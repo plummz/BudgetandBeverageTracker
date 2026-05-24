@@ -15,15 +15,15 @@ const toState = (r) => ({
 
 export function useSodaChallenge() {
   const { user } = useAuth()
-  const userId = user?.id          // stable primitive — safe to use in closures
+  const userId = user?.id
   const [state, setState] = useState(DEFAULT)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!userId) { setState(DEFAULT); return }
+    if (!userId) { setState(DEFAULT); setLoading(false); return }
+    setLoading(true)
     let live = true
 
-    // maybeSingle() returns { data: null, error: null } for 0 rows
-    // vs { data: null, error: ... } for real errors — we never reset to DEFAULT on errors
     supabase
       .from('soda_challenge')
       .select('*')
@@ -33,9 +33,11 @@ export function useSodaChallenge() {
         if (!live) return
         if (error) {
           console.error('[soda] load failed:', error.message)
-          return // keep current state — do NOT wipe to DEFAULT on errors
+          setLoading(false)
+          return
         }
         setState(data ? toState(data) : DEFAULT)
+        setLoading(false)
       })
 
     return () => { live = false }
@@ -100,6 +102,7 @@ export function useSodaChallenge() {
     longestStreak: state.longestStreak,
     checkedDays: state.checkedDays,
     checkedToday,
+    loading,
     lastChecked: state.lastChecked,
     startDate: state.startDate,
     earnedBadgeCount: earnedBadges.length,

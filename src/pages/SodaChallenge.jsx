@@ -11,7 +11,7 @@ const quote = getRandom(sodaQuotes)
 
 export default function SodaChallenge({ isDark }) {
   const {
-    streak, longestStreak, checkedDays, checkedToday,
+    streak, longestStreak, checkedDays, checkedToday, loading,
     calendarMonth, checkToday, resetChallenge, startDate,
   } = useSodaChallenge()
 
@@ -98,17 +98,26 @@ export default function SodaChallenge({ isDark }) {
             </div>
           )}
 
-          <motion.p
-            key={streak}
-            initial={{ scale: 1.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="text-7xl font-black font-mono leading-none neon-text"
-          >
-            {streak}
-          </motion.p>
-          <p className={`text-sm font-bold mt-1 ${textColor}`}>
-            {streak === 0 ? 'Start your streak today!' : streak === 1 ? 'day streak' : 'days streak'}
-          </p>
+          {loading ? (
+            <div className="flex flex-col items-center gap-2 py-2">
+              <div className="w-20 h-16 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <div className="w-32 h-4 rounded-full animate-pulse" style={{ background: 'rgba(255,255,255,0.06)' }} />
+            </div>
+          ) : (
+            <>
+              <motion.p
+                key={streak}
+                initial={{ scale: 1.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-7xl font-black font-mono leading-none neon-text"
+              >
+                {streak}
+              </motion.p>
+              <p className={`text-sm font-bold mt-1 ${textColor}`}>
+                {streak === 0 ? 'Start your streak today!' : streak === 1 ? 'day streak' : 'days streak'}
+              </p>
+            </>
+          )}
           <p className={`text-xs ${mutedColor} mt-0.5`}>
             Best: {longestStreak} days
             {startDate ? ` · since ${formatDate(startDate)}` : ''}
@@ -144,10 +153,16 @@ export default function SodaChallenge({ isDark }) {
       {/* CHECK IN BUTTON */}
       <div className="px-4 shrink-0">
         <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={handleCheck}
+          whileTap={loading ? {} : { scale: 0.9 }}
+          onClick={loading ? undefined : handleCheck}
+          disabled={loading}
           className="relative w-full py-5 rounded-3xl flex flex-col items-center gap-2 overflow-hidden"
-          style={checkedToday ? {
+          style={loading ? {
+            background: 'rgba(255,255,255,0.04)',
+            border: '2px solid rgba(255,255,255,0.08)',
+            opacity: 0.5,
+            cursor: 'not-allowed',
+          } : checkedToday ? {
             background: 'rgba(0,255,136,0.07)',
             border: '2px solid rgba(0,255,136,0.35)',
           } : {
@@ -172,7 +187,9 @@ export default function SodaChallenge({ isDark }) {
             ))}
           </AnimatePresence>
 
-          {checkedToday ? (
+          {loading ? (
+            <p className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>Loading…</p>
+          ) : checkedToday ? (
             <>
               <motion.span
                 initial={{ scale: 0 }}
