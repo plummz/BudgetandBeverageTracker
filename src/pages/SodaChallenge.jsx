@@ -119,11 +119,10 @@ export default function SodaChallenge({ isDark }) {
             </>
           )}
           <p className={`text-xs ${mutedColor} mt-0.5`}>
-            Best: {longestStreak} days
-            {startDate ? ` · since ${formatDate(startDate)}` : ''}
+            {loading ? '' : `Best: ${longestStreak} days${startDate ? ` · since ${formatDate(startDate)}` : ''}`}
           </p>
 
-          {nextBadge && (
+          {!loading && nextBadge && (
             <div className="mt-4">
               <div className="flex justify-between text-xs mb-1.5">
                 <span className={mutedColor}>{nextBadge.emoji} {nextBadge.label}</span>
@@ -248,7 +247,7 @@ export default function SodaChallenge({ isDark }) {
       >
         <div className="flex items-center justify-between mb-3">
           <p className={`text-sm font-bold ${textColor}`}>{monthName}</p>
-          <p className="neon-text text-xs font-bold">{monthChecked} days checked</p>
+          <p className="neon-text text-xs font-bold">{loading ? '…' : `${monthChecked} days checked`}</p>
         </div>
 
         <div className="grid grid-cols-7 mb-2">
